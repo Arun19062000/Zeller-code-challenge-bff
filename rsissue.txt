@@ -1,0 +1,52 @@
+
+
+Aim:
+Introducing redshift native auto copy.
+
+Deletion of un-required events without any extra components hence reintroducing back filled insertion into the master table from views.
+
+Proposed design:
+auto copy + staging + master + (date windowed) common view + views
+auto copy + staging +backfilled into master + views 
+
+lambda copy + staging + master + (date windowed) common view + views
+lambda copy + staging + back filled into master + views
+
+In case corrupted files end up in s3 auto copy will fail continuously until we remove it using quarantine lambda.
+
+Auto copy only works till copying into staging but from staging to deduplicate and merging into master table we have to have scheduled queries to execute these activities via event bridges/ redshift internal scheduler/ step functions.
+
+We are going to handle complex business logics which might be verbose for stored procedures such as staging swaping merging  deduplication backfilled insertion, flagging  transactions, purging unneeded event types, 
+Unloading completed unique ids to s3 for dydb logging/ audit tracking.
+
+Debugging and tracing unhandled errors without cloud watch analytics will be harder.
+
+Dropping copy job will re ingest all files from s3.
+
+Copy will queued due to table lock during the merging process from staging can be bypassed using swapping staging tables.
+
+Stored procedure changes can't be tested locally and diff won't be visible in deployment pipeline 
+
+Need to check bmo construct compatibility of event bridge to redshift and redshift to event bridge 
+
+Pattern was not introduced into prod before It has to go through poc and performance testing.
+----------------------------------------
+
+Updated insertion with back filled values using  common view:
+
+If you run views with filtered date no need to scan entire table with back filled insertions.
+
+Cons - Deletion of unused events not possible 
+Pros - No need to back fill master table
+each run 
+
+
+
+
+
+
+
+
+
+
+
